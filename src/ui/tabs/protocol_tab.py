@@ -3,6 +3,8 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QTextEdit)
 
+from src.utils.logger import setup_logger
+
 
 class ProtocolTab(QWidget):
     def __init__(self, ble):
@@ -18,3 +20,10 @@ class ProtocolTab(QWidget):
         self.script_editor = QTextEdit()
         self.script_editor.setPlaceholderText("在此编写自定义协议解析脚本...")
         layout.addWidget(self.script_editor)
+
+        self.btn_apply.clicked.connect(self._apply_parser)
+
+    def _apply_parser(self):
+        parser_name = self.parser_select.currentText()
+        log = setup_logger(__name__)
+        log.info("协议解析器已选择: %s", parser_name)

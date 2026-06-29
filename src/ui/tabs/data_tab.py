@@ -3,11 +3,14 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QPushButton, QHBoxLayout, QComboBox
 from PySide6.QtCore import QDateTime
 
+from src.app_layer.protocol_engine import ProtocolEngine
+
 
 class DataTab(QWidget):
     def __init__(self, ble):
         super().__init__()
         self.ble = ble
+        self.engine = ProtocolEngine()
         layout = QVBoxLayout(self)
         filter_row = QHBoxLayout()
         self.device_filter = QComboBox()
@@ -25,10 +28,11 @@ class DataTab(QWidget):
         self.ble.signals.data_received.connect(self._on_data)
 
     def _on_data(self, address: str, data: bytes):
+        parsed = self.engine.parse(address, data)
         row = self.table.rowCount()
         self.table.insertRow(row)
         self.table.setItem(row, 0, QTableWidgetItem(QDateTime.currentDateTime().toString("HH:mm:ss.zzz")))
         self.table.setItem(row, 1, QTableWidgetItem(address))
-        self.table.setItem(row, 2, QTableWidgetItem(data.hex(" ").upper()))
-        self.table.setItem(row, 3, QTableWidgetItem(data.decode("ascii", errors="replace")))
+        self.table.setItem(row, 2, QTableWidgetItem(parsed.hex_str))
+        self.table.setItem(row, 3, QTableWidgetItem(parsed.description or parsed.ascii_str))
         self.table.scrollToBottom()

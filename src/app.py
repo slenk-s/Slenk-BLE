@@ -22,5 +22,6 @@ class BLEApplication:
         self.window.show()
         loop = qasync.QEventLoop(self.app)
         asyncio.set_event_loop(loop)
+        self.app.aboutToQuit.connect(lambda: asyncio.ensure_future(self.ble.shutdown()))
         with loop:
             loop.run_forever()

@@ -39,6 +39,8 @@ class DevicePanel(QWidget):
         self.ble.signals.device_found.connect(self._on_device_found)
         self.ble.signals.scan_started.connect(lambda: self.btn_scan.setEnabled(False))
         self.ble.signals.scan_finished.connect(lambda: self.btn_scan.setEnabled(True))
+        self.btn_connect.clicked.connect(self._connect_device)
+        self.btn_disconnect.clicked.connect(self._disconnect_device)
 
     def _start_scan(self):
         asyncio.ensure_future(self._do_scan())
@@ -59,3 +61,22 @@ class DevicePanel(QWidget):
                 self.list_widget.takeItem(i)
                 break
         self.list_widget.addItem(text)
+
+    def _connect_device(self):
+        selected = self.list_widget.currentItem()
+        if selected is None:
+            return
+        # Extract address from the display text (last field after space)
+        text = selected.text()
+        address = text.split("  ")[-1] if "  " in text else ""
+        if address:
+            asyncio.ensure_future(self.ble.connector.connect(address))
+
+    def _disconnect_device(self):
+        selected = self.list_widget.currentItem()
+        if selected is None:
+            return
+        text = selected.text()
+        address = text.split("  ")[-1] if "  " in text else ""
+        if address:
+            asyncio.ensure_future(self.ble.connector.disconnect(address))

@@ -1,6 +1,6 @@
 """src/app_layer/data_cache.py"""
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
@@ -19,11 +19,10 @@ class DataCache:
 
     def __init__(self, max_size: int = 10_000):
         self.max_size = max_size
-        self._channels: dict[str, list[DataPoint]] = defaultdict(list)
+        self._channels: dict[str, deque] = defaultdict(lambda: deque(maxlen=max_size))
 
     def push(self, address: str, data: bytes, parsed: dict | None = None) -> None:
-        channel = self._channels[address]
-        channel.append(
+        self._channels[address].append(
             DataPoint(
                 timestamp=datetime.now(),
                 address=address,
@@ -31,16 +30,15 @@ class DataCache:
                 parsed=parsed,
             )
         )
-        if len(channel) > self.max_size:
-            channel.pop(0)
 
     def get_channel(self, address: str, limit: int = 100) -> list[DataPoint]:
-        return self._channels.get(address, [])[-limit:]
+        channel = list(self._channels.get(address, []))
+        return channel[-limit:]
 
     def get_all(self, limit: int = 100) -> list[DataPoint]:
         all_points = []
         for channel in self._channels.values():
-            all_points.extend(channel[-limit:])
+            all_points.extend(list(channel)[-limit:])
         return sorted(all_points, key=lambda p: p.timestamp, reverse=True)[:limit]
 
     def clear(self, address: str | None = None) -> None:
