@@ -1,7 +1,9 @@
 """src/app.py"""
 
+import asyncio
 import sys
 from PySide6.QtWidgets import QApplication
+import qasync
 from src.ble.manager import BLEManager
 from src.ui.main_window import MainWindow
 from src.utils.logger import setup_logger
@@ -18,4 +20,7 @@ class BLEApplication:
 
     def run(self):
         self.window.show()
-        sys.exit(self.app.exec())
+        loop = qasync.QEventLoop(self.app)
+        asyncio.set_event_loop(loop)
+        with loop:
+            loop.run_forever()
