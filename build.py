@@ -8,6 +8,7 @@ Or manually:
     pyinstaller --onefile --windowed --name "BLE-Monitor" --add-data "src:src" src/main.py
 """
 
+import os
 import sys
 import subprocess
 from pathlib import Path
@@ -22,7 +23,8 @@ def main():
         "--onefile",
         "--windowed",
         "--name", "BLE-Monitor",
-        "--add-data", f"{src_dir}{Path.pathsep}src",
+        "--add-data", f"{src_dir}{os.pathsep}src",
+        "--exclude", "PyQt5",
         "--hidden-import", "qasync",
         "--hidden-import", "bleak",
         "--hidden-import", "bleak.backends.winrt",
