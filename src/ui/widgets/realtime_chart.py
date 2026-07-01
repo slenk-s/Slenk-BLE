@@ -1,7 +1,6 @@
 """src/ui/widgets/realtime_chart.py - VOFA+ style waveform widget."""
 
 import pyqtgraph as pg
-from PySide6.QtWidgets import QMenu
 
 CHANNEL_COLORS = [
     (255, 68, 68),
@@ -35,6 +34,44 @@ class WaveformWidget(pg.PlotWidget):
         self._next_color = 0
         self.max_points = 500
         self._paused = False
+
+        # Translate pyqtgraph default context menu to Chinese
+        self._patch_viewbox_menu()
+
+    def _patch_viewbox_menu(self):
+        """Translate the ViewBox context menu items to Chinese."""
+        vb = self.plotItem.vb
+        orig_get_menu = vb.getMenu
+
+        def translated_get_menu(ev):
+            menu = orig_get_menu(ev)
+            if menu is None:
+                return None
+            _MAP = {
+                "View All": "自适应缩放",
+                "Mouse Mode": "鼠标模式",
+                "1D Magnify": "一维放大",
+                "2D Pan": "二维平移",
+                "3D Box": "三维框选",
+                "Transforms": "变换",
+                "Normal": "正常",
+                "Flip Horizontal": "水平翻转",
+                "Flip Vertical": "垂直翻转",
+                "Export": "导出数据",
+            }
+            for action in menu.actions():
+                t = action.text()
+                if t in _MAP:
+                    action.setText(_MAP[t])
+                sub = action.menu()
+                if sub:
+                    for sa in sub.actions():
+                        st = sa.text()
+                        if st in _MAP:
+                            sa.setText(_MAP[st])
+            return menu
+
+        vb.getMenu = translated_get_menu
 
     def toggle_pause(self):
         self._paused = not self._paused
@@ -76,28 +113,25 @@ class WaveformWidget(pg.PlotWidget):
     # ── Chinese context menu ──
 
     def raiseContextMenu(self, ev):
-        """Override pyqtgraph default context menu with Chinese menu."""
-        menu = QMenu(self)
+        """Show pyqtgraph default menu (translated to Chinese) + custom items."""
+        vb = self.plotItem.vb
+        menu = vb.getMenu(ev)
+        if menu is None:
+            return
+        menu.addSeparator()
         act_pause = menu.addAction("⏸ 暂停" if not self._paused else "▶ 继续")
         act_clear = menu.addAction("🗑 清空波形")
         menu.addSeparator()
-        act_view_all = menu.addAction("📐 自适应缩放")
         act_reset = menu.addAction("↩ 重置视图")
-        menu.addSeparator()
-        act_export = menu.addAction("💾 导出数据")
 
         action = menu.exec(ev.screenPos())
         if action == act_pause:
             self.toggle_pause()
         elif action == act_clear:
             self.clear_all()
-        elif action == act_view_all:
-            self.autoRange()
         elif action == act_reset:
             self.enableAutoRange()
             self.autoRange()
-        elif action == act_export:
-            self._export_data()
 
     def _export_data(self):
         """Export waveform data to CSV."""
